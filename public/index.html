@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大富翁 · 中国之旅</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0c0a09;--board:#1c1710;--cell:#252018;--cell-h:#302a20;--bdr:#3a3228;--gold:#c9a84c;--gold-d:#8a7540;--gold-b:#e8c85a;--txt:#ede4d4;--txt-d:#8a7e6e;--danger:#c0392b;--ok:#27ae60;--brown:#6d4c41;--cyan:#00acc1;--purple:#ab47bc;--pink:#ec407a;--orange:#ff9800;--red:#ef5350;--yellow:#fdd835;--green:#66bb6a;--blue:#5c6bc0;--teal:#26a69a}
+html{font-size:14px}body{background:var(--bg);color:var(--txt);font-family:'Noto Serif SC','SimSun',serif;min-height:100vh;overflow-x:auto}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.03;pointer-events:none;z-index:9999}
+.hidden{display:none!important}
+.screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center}
+.screen h1{font-size:3rem;color:var(--gold);text-shadow:0 0 60px rgba(201,168,76,.35);letter-spacing:.2em;margin-bottom:.1rem}
+.screen .sub{color:var(--txt-d);font-size:1rem;letter-spacing:.4em;margin-bottom:2rem}
+.sbox{background:rgba(26,21,16,.85);border:1px solid var(--bdr);border-radius:16px;padding:2rem 2.5rem;max-width:500px;width:100%;backdrop-filter:blur(8px)}
+.sbox h2{color:var(--gold);font-size:1.15rem;letter-spacing:.1em;margin-bottom:1.2rem}
+.sg{margin-bottom:1.2rem;text-align:left}.sg label{display:block;font-size:.78rem;color:var(--txt-d);margin-bottom:.4rem}
+.obs{display:flex;gap:.5rem}.obs button{flex:1;padding:.5rem;background:var(--cell);border:1px solid var(--bdr);color:var(--txt);border-radius:8px;font-size:.82rem;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
+.obs button:hover,.obs button.sel{border-color:var(--gold);color:var(--gold);box-shadow:0 0 15px rgba(201,168,76,.15)}
+.tr{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0}.tr span{font-size:.85rem}
+.tog{position:relative;width:44px;height:24px;cursor:pointer}.tog input{display:none}.tog .sl{position:absolute;inset:0;background:var(--cell);border:1px solid var(--bdr);border-radius:12px;transition:all .2s}.tog .sl::after{content:'';position:absolute;width:18px;height:18px;background:var(--txt-d);border-radius:50%;top:2px;left:2px;transition:all .2s}.tog input:checked+.sl{background:rgba(201,168,76,.2);border-color:var(--gold)}.tog input:checked+.sl::after{background:var(--gold);left:22px}
+.btn{padding:.5rem .7rem;border:1px solid var(--bdr);background:var(--cell);color:var(--txt);border-radius:8px;font-size:.76rem;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s;flex:1;min-width:65px;text-align:center}
+.btn:hover:not(:disabled){background:var(--cell-h);border-color:var(--gold-d);transform:translateY(-1px)}.btn:disabled{opacity:.25;cursor:not-allowed}.btn:active:not(:disabled){transform:scale(.97)}
+.btn.p{background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#1a1510;border-color:var(--gold)}.btn.p:hover:not(:disabled){box-shadow:0 4px 20px rgba(201,168,76,.4)}
+.btn.d{border-color:var(--danger);color:var(--danger)}.btn.d:hover:not(:disabled){background:rgba(192,57,43,.12)}
+.btn.s{border-color:var(--ok);color:var(--ok);background:rgba(39,174,96,.06)}.btn.s:hover:not(:disabled){background:rgba(39,174,96,.18)}
+@keyframes bp{0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,.35)}50%{box-shadow:0 0 0 6px rgba(39,174,96,0)}}.btn.br{animation:bp 2s ease-in-out infinite}
+
+/* Mode select */
+.mode-btns{display:flex;gap:1rem;margin:1.5rem 0}.mode-btn{flex:1;padding:1.5rem 1rem;background:var(--cell);border:2px solid var(--bdr);border-radius:14px;cursor:pointer;transition:all .25s;font-family:inherit}
+.mode-btn:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 8px 30px rgba(201,168,76,.2)}
+.mode-btn .mi{font-size:2rem;margin-bottom:.5rem}.mode-btn .mt{color:var(--gold);font-size:1rem;font-weight:700}.mode-btn .md2{color:var(--txt-d);font-size:.75rem;margin-top:.3rem}
+
+/* Lobby */
+.lobby-players{margin:1rem 0}.lp-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .7rem;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:.3rem}
+.lp-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}.lp-name{flex:1;font-size:.85rem;font-weight:600}.lp-status{font-size:.7rem;color:var(--txt-d)}
+.conn-status{font-size:.65rem;padding:.15rem .4rem;border-radius:10px;margin-left:.3rem}
+.conn-ok{background:rgba(39,174,96,.2);color:var(--ok)}.conn-off{background:rgba(192,57,43,.2);color:var(--danger)}
+.room-code{font-size:1.8rem;color:var(--gold);font-weight:700;letter-spacing:.3em;margin:.5rem 0;text-align:center}
+.room-code-label{font-size:.72rem;color:var(--txt-d);text-align:center}
+
+/* Board */
+#game{display:none;padding:.8rem;min-height:100vh}
+.gw{display:flex;gap:1rem;max-width:1320px;margin:0 auto;align-items:flex-start}
+.bw{flex:0 0 auto;perspective:1800px}
+.board{display:grid;grid-template-columns:82px repeat(9,56px) 82px;grid-template-rows:82px repeat(9,56px) 82px;border:2px solid #3a3228;background:#1c1710;border-radius:6px;box-shadow:0 0 0 1px rgba(201,168,76,.1),0 40px 80px rgba(0,0,0,.5),inset 0 0 40px rgba(0,0,0,.3);transform:rotateX(5deg);transform-origin:center 60%}
+.bc{grid-row:2/11;grid-column:2/11;background:radial-gradient(ellipse at center,rgba(201,168,76,.07) 0%,transparent 65%);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(201,168,76,.05);pointer-events:none;position:relative;overflow:hidden}
+.bc::before{content:'中';position:absolute;font-size:12rem;color:rgba(201,168,76,.03);font-weight:700;pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%)}
+.bc h2{font-size:1.8rem;color:var(--gold);letter-spacing:.3em;text-shadow:0 0 30px rgba(201,168,76,.2)}.bc p{color:var(--txt-d);font-size:.75rem;letter-spacing:.5em;margin-top:.1rem}
+.ri{margin-top:.7rem;font-size:.72rem;color:var(--gold-d)}.pi{font-size:.66rem;color:var(--ok);margin-top:.12rem;min-height:1em}
+.ci2{margin-top:.6rem;padding:.3rem 1rem;border-radius:20px;font-size:.8rem;font-weight:600;transition:all .3s}
+
+.sp{position:relative;border:1px solid rgba(58,50,40,.6);background:var(--cell);display:flex;overflow:hidden;cursor:default;transition:all .15s;box-shadow:inset 0 0 8px rgba(0,0,0,.2)}.sp:hover{background:var(--cell-h)}.sp:not(.cr){flex-direction:row}
+.cb{min-width:4px;width:4px;height:100%}.sp.cr .cb{display:none}
+.sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1px;text-align:center;min-height:0}
+.sn{font-size:.5rem;font-weight:600;line-height:1.2}.sp2{font-size:.46rem;color:var(--gold-d);margin-top:1px}.si{font-size:.85rem;line-height:1}
+.sp[data-c="brown"]{background:rgba(109,76,65,.12)}.sp[data-c="cyan"]{background:rgba(0,172,193,.08)}.sp[data-c="purple"]{background:rgba(171,71,188,.08)}.sp[data-c="pink"]{background:rgba(236,64,122,.08)}.sp[data-c="orange"]{background:rgba(255,152,0,.08)}.sp[data-c="red"]{background:rgba(239,83,80,.08)}.sp[data-c="yellow"]{background:rgba(253,216,53,.06)}.sp[data-c="green"]{background:rgba(102,187,106,.08)}.sp[data-c="blue"]{background:rgba(92,107,192,.08)}.sp[data-c="teal"]{background:rgba(38,166,154,.08)}
+.cr{display:flex;align-items:center;justify-content:center;text-align:center;flex-direction:column;box-shadow:inset 0 0 12px rgba(0,0,0,.3)}.cr .ci{font-size:1.4rem;margin-bottom:.05rem}.cr .cl{font-size:.52rem;color:var(--txt-d);line-height:1.2}
+.cr.go{background:radial-gradient(circle at center,rgba(201,168,76,.15),transparent 70%)}.cr.jail{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(120,144,156,.07) 3px,rgba(120,144,156,.07) 4px),repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(120,144,156,.07) 3px,rgba(120,144,156,.07) 4px)}.cr.freeParking{background:radial-gradient(circle at center,rgba(39,174,96,.12),transparent 70%)}.cr.goToJail{background:radial-gradient(circle at center,rgba(192,57,43,.15),transparent 70%)}
+.ta{position:absolute;bottom:1px;left:0;right:0;display:flex;flex-wrap:wrap;gap:1px;justify-content:center;z-index:2}
+.bi{position:absolute;bottom:1px;right:2px;font-size:.4rem;z-index:1}
+.od{position:absolute;top:1px;right:2px;width:7px;height:7px;border-radius:50%;z-index:1;border:1px solid rgba(255,255,255,.3)}
+.pt{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;font-size:.36rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);flex-shrink:0;animation:tpop .25s ease}
+@keyframes tpop{0%{transform:scale(1.6);opacity:.4}60%{transform:scale(.9)}100%{transform:scale(1);opacity:1}}
+
+.sb-side{flex:1;min-width:280px;max-width:340px;display:flex;flex-direction:column;gap:.5rem;position:sticky;top:.8rem;max-height:calc(100vh - 1.6rem);overflow-y:auto}
+.sb-side::-webkit-scrollbar{width:4px}.sb-side::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+.pp{background:rgba(26,21,16,.92);border:1px solid var(--bdr);border-radius:10px;padding:.5rem .65rem;transition:all .3s}.pp.active{border-color:var(--gold);box-shadow:0 0 20px rgba(201,168,76,.2);transform:scale(1.02)}.pp.bk{opacity:.35;filter:grayscale(.8)}
+.ph{display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem}.pd{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.25)}.pn2{font-weight:700;font-size:.8rem;flex:1}.pm2{color:var(--gold);font-weight:700;font-size:.85rem}
+.pp-props{display:flex;flex-wrap:wrap;gap:2px;margin-top:.12rem}.pp-pr{font-size:.46rem;padding:1px 4px;border-radius:3px;color:#fff;font-weight:600;white-space:nowrap}.pp-st{font-size:.55rem;color:var(--txt-d);margin-top:.12rem}
+.da{background:linear-gradient(145deg,rgba(30,26,20,.95),rgba(22,18,16,.95));border:1px solid var(--bdr);border-radius:10px;padding:.7rem;display:flex;align-items:center;justify-content:center;gap:.9rem}
+.ds{width:54px;height:54px;perspective:300px}
+.dc{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.22,1,.36,1)}
+.df{position:absolute;width:54px;height:54px;background:linear-gradient(135deg,#fafafa 0%,#eae4d8 100%);border-radius:9px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;backface-visibility:hidden;border:1px solid rgba(0,0,0,.08)}
+.df-fr{transform:translateZ(27px)}.df-ri{transform:rotateY(90deg) translateZ(27px)}.df-to{transform:rotateX(90deg) translateZ(27px)}.df-bo{transform:rotateX(-90deg) translateZ(27px)}.df-le{transform:rotateY(-90deg) translateZ(27px)}.df-ba{transform:rotateY(180deg) translateZ(27px)}
+.pp3{width:9px;height:9px;background:radial-gradient(circle at 35% 35%,#444,#111);border-radius:50%;align-self:center;justify-self:center}.pp3.e{background:transparent}
+.dtot{font-size:1.4rem;font-weight:700;color:var(--gold);min-width:32px;text-align:center}.dbdg{font-size:.62rem;color:var(--danger);font-weight:700;min-height:.9em;text-align:center}
+.drdy .dc{animation:dglow 1.8s ease-in-out infinite}
+@keyframes dglow{0%,100%{filter:drop-shadow(0 0 4px rgba(201,168,76,.15))}50%{filter:drop-shadow(0 0 12px rgba(201,168,76,.35))}}
+.timer{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.1);border-radius:8px;padding:.3rem .6rem;text-align:center;font-size:.9rem;color:var(--gold);font-weight:700}
+.timer.urgent{color:var(--danger);border-color:rgba(192,57,43,.3);animation:timerPulse .5s ease infinite}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.6}}
+.hint{background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.08);border-radius:8px;padding:.35rem .5rem;font-size:.66rem;color:var(--gold-d);text-align:center;min-height:2em;line-height:1.3}
+.acts{display:flex;flex-wrap:wrap;gap:.35rem}
+.gl{background:rgba(26,21,16,.92);border:1px solid var(--bdr);border-radius:10px;padding:.4rem .55rem;max-height:110px;overflow-y:auto;flex:0 0 auto}
+.gl::-webkit-scrollbar{width:3px}.gl::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+.gt{font-size:.6rem;color:var(--txt-d);margin-bottom:.15rem;font-weight:600;letter-spacing:.1em}
+.le{font-size:.62rem;color:var(--txt-d);padding:.08rem 0;border-bottom:1px solid rgba(58,50,40,.18);line-height:1.3}.le:last-child{border-bottom:none;color:var(--txt)}.le.i{color:var(--gold)}
+
+/* Chat */
+.chat-box{background:rgba(26,21,16,.92);border:1px solid var(--bdr);border-radius:10px;padding:.4rem .5rem}
+.chat-t{font-size:.6rem;color:var(--txt-d);margin-bottom:.3rem;font-weight:600}
+.chat-log{max-height:70px;overflow-y:auto;font-size:.6rem;margin-bottom:.3rem}
+.chat-log::-webkit-scrollbar{width:2px}.chat-log::-webkit-scrollbar-thumb{background:var(--bdr)}
+.chat-msg{padding:.1rem 0;color:var(--txt-d)}.chat-msg .nick{color:var(--gold);font-weight:600}
+.quick-msgs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:.3rem}
+.qbtn{padding:.2rem .4rem;background:var(--cell);border:1px solid rgba(58,50,40,.4);border-radius:5px;font-size:.55rem;color:var(--txt-d);cursor:pointer;font-family:inherit;transition:all .15s}
+.qbtn:hover{border-color:var(--gold-d);color:var(--gold)}
+.chat-input{display:flex;gap:3px}.chat-input input{flex:1;padding:.25rem .4rem;background:var(--cell);border:1px solid var(--bdr);border-radius:5px;color:var(--txt);font-size:.62rem;font-family:inherit}.chat-input button{padding:.25rem .5rem}
+
+/* Modal */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);animation:fi .2s}
+.md{background:linear-gradient(155deg,#201c16,#161210);border:1px solid rgba(201,168,76,.12);border-radius:14px;padding:1.5rem 1.7rem;max-width:480px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 25px 70px rgba(0,0,0,.6);animation:su .3s cubic-bezier(.34,1.56,.64,1)}
+.md h3{color:var(--gold);font-size:1.05rem;margin-bottom:.7rem;letter-spacing:.1em;text-align:center}
+.md p{margin-bottom:.35rem;line-height:1.5;font-size:.83rem}
+.ct{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.12);border-radius:10px;padding:.75rem;margin-bottom:.6rem;text-align:center;font-size:.92rem;line-height:1.6}
+.ci-ic{font-size:1.8rem;margin-bottom:.35rem;text-align:center}
+.mb{display:flex;gap:.5rem;margin-top:.8rem;justify-content:center;flex-wrap:wrap}.mb .btn{flex:0 1 auto;min-width:80px}
+.pc{background:rgba(35,30,22,.7);border:1px solid var(--bdr);border-radius:10px;padding:.75rem;margin-bottom:.5rem}
+.pc-h{display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}.pc-c{width:20px;height:20px;border-radius:4px;flex-shrink:0}.pc-n{font-size:.95rem;font-weight:700;flex:1}.pc-p{color:var(--gold);font-weight:700;font-size:.85rem}
+.rt{width:100%;font-size:.68rem;margin-top:.25rem;border-collapse:collapse}.rt td,.rt th{padding:.12rem .25rem;text-align:left;border-bottom:1px solid rgba(58,50,40,.18)}.rt th{color:var(--txt-d);font-weight:400}.rt td:last-child{text-align:right;color:var(--gold)}
+.ts{margin-bottom:.6rem}.ts label{display:block;font-size:.68rem;color:var(--txt-d);margin-bottom:.18rem}.ts select,.ts input[type="number"],.ts input[type="text"]{width:100%;padding:.35rem .45rem;background:var(--cell);border:1px solid var(--bdr);color:var(--txt);border-radius:6px;font-family:inherit;font-size:.78rem}
+@keyframes fi{from{opacity:0}to{opacity:1}}@keyframes su{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* Effects */
+#tBox{position:fixed;top:16px;right:16px;z-index:3000;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+.tst{padding:7px 14px;border-radius:8px;font-size:.78rem;font-weight:700;animation:tin .3s ease;white-space:nowrap;backdrop-filter:blur(6px)}
+.tst-g{background:rgba(39,174,96,.88);color:#fff}.tst-l{background:rgba(192,57,43,.88);color:#fff}.tst-i{background:rgba(201,168,76,.88);color:#1a1510}.tst-o{animation:tout .4s ease forwards}
+@keyframes tin{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:translateX(0)}}@keyframes tout{to{opacity:0;transform:translateX(80px)}}
+#sFx{position:fixed;inset:0;pointer-events:none;z-index:500;opacity:0}
+.sf-g{background:radial-gradient(circle,rgba(39,174,96,.2) 0%,transparent 65%);animation:sff .6s ease forwards}.sf-l{background:radial-gradient(circle,rgba(192,57,43,.22) 0%,transparent 65%);animation:sff .5s ease forwards}.sf-gd{background:radial-gradient(circle,rgba(201,168,76,.25) 0%,transparent 65%);animation:sff .7s ease forwards}.sf-j{background:rgba(0,0,0,.45);animation:sfj .9s ease forwards}
+@keyframes sff{0%{opacity:0}15%{opacity:1}100%{opacity:0}}@keyframes sfj{0%{opacity:0}8%{opacity:1}40%{opacity:.7}100%{opacity:0}}
+body.shk{animation:bsk .35s ease}
+@keyframes bsk{0%,100%{transform:translateX(0)}15%{transform:translateX(-5px)}30%{transform:translateX(5px)}45%{transform:translateX(-4px)}60%{transform:translateX(4px)}75%{transform:translateX(-2px)}90%{transform:translateX(2px)}}
+#bA{position:fixed;inset:0;pointer-events:none;z-index:600;display:flex;align-items:center;justify-content:center}
+.bnr{background:linear-gradient(135deg,rgba(26,21,16,.95),rgba(30,26,20,.95));border:2px solid var(--gold);border-radius:16px;padding:1.5rem 3rem;text-align:center;box-shadow:0 0 60px rgba(201,168,76,.2);animation:bi .5s cubic-bezier(.34,1.56,.64,1);backdrop-filter:blur(8px)}
+.bn-o{animation:bo .4s ease forwards}.bn-t{font-size:1.6rem;color:var(--gold);font-weight:700}.bn-s{font-size:.85rem;color:var(--txt-d);margin-top:.4rem}
+@keyframes bi{from{opacity:0;transform:scale(.3) rotate(-8deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes bo{to{opacity:0;transform:scale(.8) translateY(-30px)}}
+.cnf{position:fixed;top:-20px;z-index:700;pointer-events:none;animation:cfl linear forwards}
+@keyframes cfl{0%{transform:translateY(0) rotate(0) scale(1);opacity:1}80%{opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(.3);opacity:0}}
+#fB{position:fixed;top:40%;right:20px;z-index:400;pointer-events:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.fm{font-size:1.15rem;font-weight:700;animation:fmu 1.4s ease forwards;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.fm-g{color:var(--ok)}.fm-l{color:var(--danger)}
+@keyframes fmu{0%{opacity:0;transform:translateY(15px) scale(.8)}12%{opacity:1;transform:translateY(0) scale(1)}75%{opacity:1}100%{opacity:0;transform:translateY(-35px) scale(.9)}}
+
+@media(max-width:1000px){.gw{flex-direction:column;align-items:center}.sb-side{max-width:100%;position:static;max-height:none}}
+@media(max-width:780px){.board{grid-template-columns:56px repeat(9,36px) 56px;grid-template-rows:56px repeat(9,36px) 56px}.cr .ci{font-size:.85rem}.cr .cl{font-size:.38rem}.sn{font-size:.36rem}.sp2{font-size:.33rem}.cb{min-width:3px;width:3px}.pt{width:10px;height:10px;font-size:.26rem}.ds{width:40px;height:40px}.df{width:40px;height:40px;padding:5px}.df-fr{transform:translateZ(20px)}.df-ri{transform:rotateY(90deg) translateZ(20px)}.df-to{transform:rotateX(90deg) translateZ(20px)}.df-bo{transform:rotateX(-90deg) translateZ(20px)}.df-le{transform:rotateY(-90deg) translateZ(20px)}.df-ba{transform:rotateY(180deg) translateZ(20px)}.pp3{width:6px;height:6px}}
+</style>
+</head>
+<body>
+
+<!-- ===== MODE SELECT ===== -->
+<div class="screen" id="modeSelect">
+  <h1>大富翁</h1>
+  <p class="sub">中 国 之 旅</p>
+  <div class="sbox">
+    <h2>选择游戏模式</h2>
+    <div class="mode-btns">
+      <div class="mode-btn" onclick="showLocalSetup()"><div class="mi">🎮</div><div class="mt">本地游戏</div><div class="md2">2-4人同屏对战</div></div>
+      <div class="mode-btn" onclick="showLobby()"><div class="mi">🌐</div><div class="mt">在线对战</div><div class="md2">联网多人对战</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOCAL SETUP ===== -->
+<div class="screen hidden" id="localSetup">
+  <h1>大富翁</h1>
+  <p class="sub">本 地 游 戏</p>
+  <div class="sbox">
+    <div class="sg"><label>玩家人数</label><div class="obs" id="nB"><button onclick="selN=2;os('nB',0)">2人</button><button onclick="selN=3;os('nB',1)">3人</button><button onclick="selN=4;os('nB',2)" class="sel">4人</button></div></div>
+    <div class="sg"><label>初始资金</label><div class="obs" id="mB"><button onclick="selM=10000;os('mB',0)">¥10K</button><button onclick="selM=15000;os('mB',1)" class="sel">¥15K</button><button onclick="selM=20000;os('mB',2)">¥20K</button></div></div>
+    <div class="sg"><div class="tr"><span>免费停车奖池</span><label class="tog"><input type="checkbox" id="pCk"><span class="sl"></span></label></div></div>
+    <button class="btn p" style="width:100%;padding:.85rem;font-size:1.05rem" onclick="startLocalGame()">开 始 游 戏</button>
+    <p style="margin-top:1rem;text-align:center"><button class="btn" onclick="showModeSelect()" style="flex:none;padding:.4rem 1rem">← 返回</button></p>
+  </div>
+</div>
+
+<!-- ===== LOBBY ===== -->
+<div class="screen hidden" id="lobby">
+  <h1 style="font-size:2rem">在线对战</h1>
+  <div class="sbox" id="lobbyContent">
+    <!-- Pre-join -->
+    <div id="preJoin">
+      <div class="sg"><label>你的昵称</label><input type="text" id="nickInput" placeholder="输入昵称..." maxlength="12" style="width:100%;padding:.5rem;background:var(--cell);border:1px solid var(--bdr);color:var(--txt);border-radius:8px;font-family:inherit;font-size:.85rem"></div>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button class="btn p" style="padding:.7rem" onclick="createRoom()">创建房间</button>
+      </div>
+      <div style="margin-top:1rem;border-top:1px solid var(--bdr);padding-top:1rem">
+        <div class="sg"><label>房间号</label><input type="text" id="roomInput" placeholder="输入4位房间号" maxlength="4" style="width:100%;padding:.5rem;background:var(--cell);border:1px solid var(--bdr);color:var(--txt);border-radius:8px;font-family:inherit;font-size:.85rem;text-transform:uppercase;text-align:center;letter-spacing:.3em;font-weight:700"></div>
+        <button class="btn" style="width:100%;padding:.7rem" onclick="joinRoom()">加入房间</button>
+      </div>
+    </div>
+    <!-- In room -->
+    <div id="inRoom" class="hidden">
+      <div class="room-code-label">房间号</div>
+      <div class="room-code" id="dispRoomId"></div>
+      <div id="connStatus" class="conn-status conn-ok" style="text-align:center;margin-bottom:.5rem">🟢 已连接</div>
+      <div class="lobby-players" id="lobbyPlayers"></div>
+      <div id="roomSettings" class="hidden">
+        <div class="sg"><label>初始资金</label><div class="obs" id="lsMB"><button onclick="updateSetting('money',10000);os('lsMB',0)">¥10K</button><button onclick="updateSetting('money',15000);os('lsMB',1)" class="sel">¥15K</button><button onclick="updateSetting('money',20000);os('lsMB',2)">¥20K</button></div></div>
+        <div class="sg"><div class="tr"><span>免费停车奖池</span><label class="tog"><input type="checkbox" id="lsPool" onchange="updateSetting('pool',this.checked)"><span class="sl"></span></label></div></div>
+        <div class="sg"><label>回合限时</label><div class="obs" id="lsTT"><button onclick="updateSetting('turnTime',60);os('lsTT',0)">60秒</button><button onclick="updateSetting('turnTime',90);os('lsTT',1)" class="sel">90秒</button><button onclick="updateSetting('turnTime',120);os('lsTT',2)">120秒</button></div></div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.8rem">
+        <button class="btn s" style="padding:.7rem" onclick="toggleReady()">准备</button>
+        <button class="btn p hidden" id="startOnlineBtn" style="padding:.7rem" onclick="startOnlineGame()">开始游戏</button>
+      </div>
+      <p style="margin-top:1rem;text-align:center"><button class="btn" onclick="leaveRoom()" style="flex:none;padding:.4rem 1rem">离开房间</button></p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GAME ===== -->
+<div id="game"><div class="gw">
+  <div class="bw"><div class="board" id="board"></div></div>
+  <div class="sb-side">
+    <div id="pps"></div>
+    <div id="timerBox" class="timer hidden"></div>
+    <div class="da"><div class="ds drdy" id="ds1"></div><div style="display:flex;flex-direction:column;align-items:center;gap:.1rem"><div class="dtot" id="dT">—</div><div class="dbdg" id="dB"></div></div><div class="ds drdy" id="ds2"></div></div>
+    <div class="hint" id="hint"></div>
+    <div class="acts" id="acts"></div>
+    <div class="gl" id="gl"><div class="gt">📜 游戏记录</div></div>
+    <div class="chat-box hidden" id="chatBox">
+      <div class="chat-t">💬 聊天</div>
+      <div class="chat-log" id="chatLog"></div>
+      <div class="quick-msgs">
+        <div class="qbtn" onclick="sendChat('你好！')">你好</div><div class="qbtn" onclick="sendChat('快点！')">快点</div>
+        <div class="qbtn" onclick="sendChat('哈哈哈')">哈哈</div><div class="qbtn" onclick="sendChat('好运！')">好运</div>
+        <div class="qbtn" onclick="sendChat('GG')">GG</div><div class="qbtn" onclick="sendChat('太贵了！')">太贵了</div>
+        <div class="qbtn" onclick="sendChat('不服来战')">不服</div><div class="qbtn" onclick="sendChat('这波血亏')">血亏</div>
+        <div class="qbtn" onclick="sendChat('谢谢')">谢谢</div><div class="qbtn" onclick="sendChat('运气好')">运气好</div>
+      </div>
+      <div class="chat-input"><input type="text" id="chatIn" placeholder="输入消息..." maxlength="100" onkeydown="if(event.key==='Enter')sendChatFromInput()"><button class="btn" onclick="sendChatFromInput()" style="padding:.25rem .5rem;font-size:.6rem">发送</button></div>
+    </div>
+  </div>
+</div></div>
+
+<div class="mo hidden" id="mOv"><div class="md" id="mCt"></div></div>
+<div class="mo hidden" id="rM" onclick="if(event.target===this)this.classList.add('hidden')"><div class="md" style="max-width:600px;max-height:80vh;overflow-y:auto"><h3>📜 游戏规则</h3><p><b>目标：</b>购买地产、建房收租，让其他玩家破产。</p><p><b>流程：</b>掷骰子→移动→落地动作→结束回合</p><p><b>建房：</b>垄断同色全部地产后可建房。</p><p><b>快捷键：</b>Space掷骰 · E结束 · B建造 · M抵押</p><div class="mb"><button class="btn p" onclick="document.getElementById('rM').classList.add('hidden')">知道了</button></div></div></div>
+<div id="tBox"></div><div id="sFx"></div><div id="bA"></div><div id="fB"></div>
+
+<script>
+// ============================================================
+//  SHARED DATA
+// ============================================================
+const CM={brown:'#6d4c41',cyan:'#00acc1',purple:'#ab47bc',pink:'#ec407a',orange:'#ff9800',red:'#ef5350',yellow:'#fdd835',green:'#66bb6a',blue:'#5c6bc0',teal:'#26a69a'};
+const PC=['#e74c3c','#3498db','#2ecc71','#f39c12'];
+const GS=2000,BL=500,RR=[250,500,1000,2000];
+const DP={1:[{r:2,c:2}],2:[{r:1,c:3},{r:3,c:1}],3:[{r:1,c:3},{r:2,c:2},{r:3,c:1}],4:[{r:1,c:1},{r:1,c:3},{r:3,c:1},{r:3,c:3}],5:[{r:1,c:1},{r:1,c:3},{r:2,c:2},{r:3,c:1},{r:3,c:3}],6:[{r:1,c:1},{r:1,c:3},{r:2,c:1},{r:2,c:3},{r:3,c:1},{r:3,c:3}]};
+const DRT={0:'rotateX(-20deg) rotateY(20deg)',1:'rotateX(-20deg) rotateY(20deg)',2:'rotateX(-20deg) rotateY(-70deg)',3:'rotateX(70deg) rotateY(20deg)',4:'rotateX(-110deg) rotateY(20deg)',5:'rotateX(-20deg) rotateY(110deg)',6:'rotateX(-20deg) rotateY(200deg)'};
+const S=[{id:0,name:'出发',type:'go'},{id:1,name:'昆明',type:'property',color:'brown',price:600,rent:[50,250,700,1300,1700,2000],bc:500},{id:2,name:'命运',type:'fate'},{id:3,name:'贵阳',type:'property',color:'brown',price:600,rent:[50,250,700,1300,1700,2000],bc:500},{id:4,name:'所得税',type:'tax',amount:2000},{id:5,name:'北京站',type:'railway',price:1500},{id:6,name:'南宁',type:'property',color:'cyan',price:800,rent:[60,300,900,1600,2000,2400],bc:500},{id:7,name:'机会',type:'chance'},{id:8,name:'海口',type:'property',color:'cyan',price:800,rent:[60,300,900,1600,2000,2400],bc:500},{id:9,name:'拉萨',type:'property',color:'purple',price:900,rent:[70,350,1000,1800,2200,2600],bc:500},{id:10,name:'监狱',type:'jail'},{id:11,name:'长沙',type:'property',color:'pink',price:1000,rent:[80,400,1100,2000,2400,2800],bc:500},{id:12,name:'国家电网',type:'utility',price:1200},{id:13,name:'南昌',type:'property',color:'purple',price:900,rent:[70,350,1000,1800,2200,2600],bc:500},{id:14,name:'福州',type:'property',color:'pink',price:1000,rent:[80,400,1100,2000,2400,2800],bc:500},{id:15,name:'上海站',type:'railway',price:1500},{id:16,name:'合肥',type:'property',color:'orange',price:1200,rent:[100,450,1200,2200,2600,3000],bc:500},{id:17,name:'命运',type:'fate'},{id:18,name:'武汉',type:'property',color:'orange',price:1200,rent:[100,450,1200,2200,2600,3000],bc:500},{id:19,name:'郑州',type:'property',color:'red',price:1400,rent:[100,500,1400,3000,3800,4500],bc:1000},{id:20,name:'免费停车',type:'freeParking'},{id:21,name:'西安',type:'property',color:'red',price:1400,rent:[100,500,1400,3000,3800,4500],bc:1000},{id:22,name:'机会',type:'chance'},{id:23,name:'成都',type:'property',color:'red',price:1400,rent:[100,500,1400,3000,3800,4500],bc:1000},{id:24,name:'重庆',type:'property',color:'green',price:1800,rent:[140,700,1800,4000,4800,5500],bc:1000},{id:25,name:'广州站',type:'railway',price:1500},{id:26,name:'杭州',type:'property',color:'yellow',price:1600,rent:[120,600,1600,3600,4200,5000],bc:1000},{id:27,name:'南京',type:'property',color:'yellow',price:1600,rent:[120,600,1600,3600,4200,5000],bc:1000},{id:28,name:'中国水务',type:'utility',price:1200},{id:29,name:'天津',type:'property',color:'green',price:1800,rent:[140,700,1800,4000,4800,5500],bc:1000},{id:30,name:'入狱',type:'goToJail'},{id:31,name:'广州',type:'property',color:'green',price:1800,rent:[140,700,1800,4000,4800,5500],bc:1000},{id:32,name:'深圳',type:'property',color:'teal',price:2200,rent:[160,800,2000,5000,6000,7000],bc:1000},{id:33,name:'命运',type:'fate'},{id:34,name:'上海',type:'property',color:'blue',price:2400,rent:[180,900,2200,5500,6500,7500],bc:1000},{id:35,name:'成都站',type:'railway',price:1500},{id:36,name:'机会',type:'chance'},{id:37,name:'北京',type:'property',color:'blue',price:2600,rent:[200,1000,2400,6000,7000,8000],bc:1000},{id:38,name:'奢侈税',type:'tax',amount:1000},{id:39,name:'香港',type:'property',color:'teal',price:2200,rent:[160,800,2000,5000,6000,7000],bc:1000}];
+const GP=[];(function(){GP[0]={r:11,c:1};for(let i=1;i<=9;i++)GP[i]={r:11,c:i+1};GP[10]={r:11,c:11};for(let i=11;i<=19;i++)GP[i]={r:21-i,c:11};GP[20]={r:1,c:11};for(let i=21;i<=29;i++)GP[i]={r:1,c:31-i};GP[30]={r:1,c:1};for(let i=31;i<=39;i++)GP[i]={r:i-29,c:1};})();
+
+// ============================================================
+//  STATE
+// ============================================================
+let mode='local', selN=4, selM=15000, ws=null, myId=null, myRoomId=null, isHost=false, PN=['玩家 1','玩家 2','玩家 3','玩家 4'];
+let G={np:4,cp:0,st:'setup',pl:[],d:[0,0],dc:0,isD:false,wn:-1,rd:0,pool:0,uP:false,sm:15000};
+let AUC={ac:false,sid:-1,ord:[],ci:0,hi:0,hb:-1};
+function sf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function os(id,n){document.querySelectorAll('#'+id+' button').forEach((b,i)=>b.classList.toggle('sel',i===n));}
+function pn(i){return PN[i]||('玩家'+(i+1));}
+
+// ============================================================
+//  SCREEN NAVIGATION
+// ============================================================
+function showScreen(id){['modeSelect','localSetup','lobby','game'].forEach(s=>{const el=document.getElementById(s);if(el)el.classList.toggle('hidden',s!==id);});}
+function showModeSelect(){showScreen('modeSelect');mode='local';}
+function showLocalSetup(){showScreen('localSetup');mode='local';}
+function showLobby(){showScreen('lobby');mode='online';}
+
+// ============================================================
+//  LOCAL MODE (original logic)
+// ============================================================
+function startLocalGame(){
+  mode='local';G.np=selN;G.cp=0;G.dc=0;G.isD=false;G.wn=-1;G.rd=1;G.pool=0;G.uP=document.getElementById('pCk').checked;G.sm=selM;G.st='waitingRoll';
+  S.forEach(s=>{s.owner=null;s.houses=0;s.mortgaged=false;});
+  G.pl=[];for(let i=0;i<G.np;i++)G.pl.push({money:selM,pos:0,props:[],jail:false,jt:0,ojc:0,bk:false});
+  PN=['玩家 1','玩家 2','玩家 3','玩家 4'].slice(0,G.np);
+  showScreen('game');document.getElementById('chatBox').classList.add('hidden');document.getElementById('timerBox').classList.add('hidden');
+  buildBoard();buildDice();setDie(1,0);setDie(2,0);log('🎮 游戏开始！每人 ¥'+selM.toLocaleString(),1);upd();
+}
+
+// ============================================================
+//  ONLINE MODE — WebSocket
+// ============================================================
+function connectWs(){
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+  ws.onopen = () => { setConnStatus(true); const saved = JSON.parse(localStorage.getItem('mp_save')||'{}'); if(saved.roomId && saved.playerId && saved.nickname) ws.send(JSON.stringify({type:'reconnect',roomId:saved.roomId,playerId:saved.playerId})); };
+  ws.onclose = () => { setConnStatus(false); setTimeout(connectWs, 3000); };
+  ws.onmessage = (e) => { let msg; try{msg=JSON.parse(e.data);}catch{return;} handleServerMsg(msg); };
+}
+
+function setConnStatus(ok){const el=document.getElementById('connStatus');if(el){el.textContent=ok?'🟢 已连接':'🔴 断线，重连中...';el.className='conn-status '+(ok?'conn-ok':'conn-off');}}
+
+function createRoom(){
+  const nick=document.getElementById('nickInput').value.trim()||'玩家';
+  if(!ws||ws.readyState!==1){connectWs();setTimeout(()=>createRoom(),1000);return;}
+  ws.send(JSON.stringify({type:'createRoom',nickname:nick,settings:{money:15000,pool:false,turnTime:90}}));
+}
+function joinRoom(){
+  const nick=document.getElementById('nickInput').value.trim()||'玩家';
+  const rid=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(!rid||rid.length!==4){toast('请输入4位房间号','l');return;}
+  if(!ws||ws.readyState!==1){connectWs();setTimeout(()=>joinRoom(),1000);return;}
+  ws.send(JSON.stringify({type:'joinRoom',roomId:rid,nickname:nick}));
+}
+function toggleReady(){if(ws)ws.send(JSON.stringify({type:'ready'}));}
+function updateSetting(key,val){if(ws&&isHost)ws.send(JSON.stringify({type:'updateSettings',settings:{[key]:val}}));}
+function startOnlineGame(){if(ws&&isHost)ws.send(JSON.stringify({type:'startGame'}));}
+function leaveRoom(){myId=null;myRoomId=null;localStorage.removeItem('mp_save');document.getElementById('preJoin').classList.remove('hidden');document.getElementById('inRoom').classList.add('hidden');}
+
+function sendChat(msg){if(ws&&msg)ws.send(JSON.stringify({type:'chat',message:msg}));}
+function sendChatFromInput(){const el=document.getElementById('chatIn');const msg=el.value.trim();if(msg){sendChat(msg);el.value='';}}
+
+// ===== SERVER MESSAGE HANDLER =====
+function handleServerMsg(msg){
+  switch(msg.type){
+    case 'roomCreated':
+      myId=msg.playerId;myRoomId=msg.roomId;isHost=true;
+      localStorage.setItem('mp_save',JSON.stringify({roomId:msg.roomId,playerId:msg.playerId,nickname:document.getElementById('nickInput').value.trim()||'玩家'}));
+      showInRoom(msg.roomId,msg.players,msg.settings,true);
+      break;
+    case 'roomJoined':
+      myId=msg.playerId;myRoomId=msg.roomId;isHost=false;
+      localStorage.setItem('mp_save',JSON.stringify({roomId:msg.roomId,playerId:msg.playerId,nickname:document.getElementById('nickInput').value.trim()||'玩家'}));
+      showInRoom(msg.roomId,msg.players,msg.settings,false);
+      break;
+    case 'reconnected':
+      myId=msg.playerId;myRoomId=msg.roomId;isHost=msg.isHost||false;
+      if(msg.state){enterOnlineGame(msg.state,msg.nicknames);}
+      else{showInRoom(msg.roomId,msg.players,msg.settings,msg.isHost);}
+      break;
+    case 'roomUpdate': updateLobby(msg.players,msg.settings); break;
+    case 'gameStarted': enterOnlineGame(msg.state,msg.nicknames); break;
+    case 'actionResult': handleActionResult(msg); break;
+    case 'turnTimer': showTimer(msg.remaining); break;
+    case 'chat': addChatMsg(msg.nickname,msg.message); break;
+    case 'emoji': showEmojiBubble(msg.nickname,msg.emoji); break;
+    case 'playerDisconnected': log(msg.nickname+' 断线',1); toast(msg.nickname+' 断线','l'); break;
+    case 'playerReconnected': log(msg.nickname+' 重连',1); toast(msg.nickname+' 重连','g'); break;
+    case 'error': toast(msg.message,'l'); break;
+  }
+}
+
+function showInRoom(roomId,players,settings,host){
+  document.getElementById('preJoin').classList.add('hidden');
+  document.getElementById('inRoom').classList.remove('hidden');
+  document.getElementById('dispRoomId').textContent=roomId;
+  document.getElementById('roomSettings').classList.toggle('hidden',!host);
+  document.getElementById('startOnlineBtn').classList.toggle('hidden',!host);
+  isHost=host; updateLobby(players,settings);
+}
+function updateLobby(players,settings){
+  const c=document.getElementById('lobbyPlayers');c.innerHTML='';
+  const PN2=[];
+  players.forEach((p,i)=>{
+    PN2[i]=p.nickname;
+    const d=document.createElement('div');d.className='lp-row';
+    d.innerHTML=`<div class="lp-dot" style="background:${PC[p.color]}"></div><div class="lp-name">${p.nickname}${p.id===myId?' (你)':''}</div><div class="lp-status">${p.ready?'✅ 准备':'⏳ 等待'}${!p.online?' · <span style="color:var(--danger)">离线</span>':''}</div>`;
+    c.appendChild(d);
+  });
+  PN=PN2;
+  // Update start button
+  const canStart=isHost&&players.length>=2&&players.every(p=>p.ready||p.id===myId);
+  const btn=document.getElementById('startOnlineBtn');if(btn)btn.disabled=!canStart;
+}
+
+function enterOnlineGame(state,nicknames){
+  mode='online';PN=nicknames;
+  G.np=state.players.length;G.cp=state.currentPlayer;G.st=state.phase;G.rd=state.round;G.pool=state.pool;G.d=state.dice;G.wn=state.winner;G.uP=true;
+  G.pl=state.players.map(p=>({money:p.money,pos:p.position,props:[...p.properties],jail:p.inJail,jt:p.jailTurns,ojc:p.ojc,bk:p.bankrupt}));
+  state.spaces.forEach((s,i)=>{S[i].owner=s.owner;S[i].houses=s.houses;S[i].mortgaged=s.mortgaged;});
+  showScreen('game');document.getElementById('chatBox').classList.remove('hidden');
+  buildBoard();buildDice();setDie(1,0);setDie(2,0);upd();
+  log('🎮 在线游戏开始！',1);
+}
+
+// ===== ACTION RESULT FROM SERVER =====
+async function handleActionResult(msg){
+  // Play animations
+  for(const a of (msg.animations||[])){
+    switch(a.type){
+      case 'diceRoll': await Promise.all([animD(1,a.dice[0]),animD(2,a.dice[1])]);document.getElementById('dT').textContent=a.dice[0]+a.dice[1];break;
+      case 'move': await animMove(a);break;
+      case 'card': await animCard(a);break;
+      case 'flash': sFx(a.effect);break;
+      case 'shake': shk();break;
+      case 'confetti': cnf(a.count);break;
+      case 'banner': bnr(a.title,a.subtitle);break;
+      case 'jail': sFx('j');shk();break;
+    }
+  }
+  // Apply state
+  if(msg.state) applyState(msg.state);
+  // Process events
+  for(const e of (msg.events||[])){
+    switch(e.type){
+      case 'log': log(e.text,e.important);break;
+      case 'toast': toast(e.message,e.level);break;
+      case 'floatMoney': flM(e.amount);break;
+      case 'needInput': handleNeedInput(e);break;
+      case 'tradeProposal': showTradeProposal(e);break;
+    }
+  }
+}
+
+function applyState(state){
+  G.cp=state.currentPlayer;G.st=state.phase;G.rd=state.round;G.pool=state.pool;G.d=state.dice;G.wn=state.winner;
+  state.spaces.forEach((s,i)=>{S[i].owner=s.owner;S[i].houses=s.houses;S[i].mortgaged=s.mortgaged;});
+  state.players.forEach((p,i)=>{if(!G.pl[i])G.pl[i]={};Object.assign(G.pl[i],{money:p.money,pos:p.position,props:[...p.properties],jail:p.inJail,jt:p.jailTurns,ojc:p.ojc,bk:p.bankrupt});});
+  upd();
+}
+
+function handleNeedInput(e){
+  // Show appropriate UI for the current player
+  const isMyTurn = G.pl.findIndex((_,i)=>i===G.cp) >= 0 && PN[G.cp] === PN[PN.indexOf(PN.find((_,i)=>i===G.cp))] && G.cp < PN.length;
+  const myIdx = PN.indexOf(PN.find((_,i)=> {
+    // Find my index by matching current socket
+    return G.pl[i] && !G.pl[i].bk;
+  }));
+  // In online mode, my index is determined by myId
+  // For simplicity, if it's my turn, show actions
+  upd(); // This will show the correct buttons based on G.st
+}
+
+function showTradeProposal(e){
+  const fromNick=pn(e.from),toIdx=e.to;
+  // Find my player index
+  const myIdx=getMyIndex();
+  if(myIdx!==toIdx)return;
+  shM(`<h3>🤝 交易请求</h3><div class="ct">${fromNick} 想用 ${S[e.offerSid].name}${e.cash>0?' + ¥'+e.cash:''} 换你的 ${S[e.wantSid].name}</div><div class="mb"><button class="btn p" onclick="ws.send(JSON.stringify({type:'respondTrade',accept:true}));hiM()">接受</button><button class="btn d" onclick="ws.send(JSON.stringify({type:'respondTrade',accept:false}));hiM()">拒绝</button></div>`);
+}
+
+function getMyIndex(){
+  // This requires tracking which player index we are
+  // We get this from the room players info
+  // For now, find by iterating
+  // Actually, we need to store my player index when entering the game
+  return window._myIdx !== undefined ? window._myIdx : -1;
+}
+
+// Track my index when entering game
+const origEnter = enterOnlineGame;
+enterOnlineGame = function(state, nicknames) {
+  // Find my index from the stored room info
+  // The players array order matches the server's room.players order
+  window._myIdx = -1;
+  // We stored myId earlier
+  origEnter(state, nicknames);
+  // Set myIdx based on position in the player list
+  // This is set when room is created/joined
+};
+
+// Override: store player index when room info received
+const origShowInRoom = showInRoom;
+
+// Actually, let me fix this properly. When we join a room, the server sends players array.
+// My position in that array is my player index for the game.
+// We need to find it.
+
+// I'll store it when we receive roomCreated or roomJoined
+// In handleServerMsg, after roomCreated/roomJoined, find my index
+
+// Fix: add _myIdx tracking
+(function(){
+  const origHandler = handleServerMsg;
+  handleServerMsg = function(msg) {
+    if (msg.type === 'roomCreated' || msg.type === 'roomJoined' || msg.type === 'reconnected') {
+      // After processing, find my index
+      setTimeout(() => {
+        if (msg.players) {
+          const idx = msg.players.findIndex(p => p.id === myId);
+          if (idx >= 0) window._myIdx = idx;
+        }
+      }, 0);
+    }
+    if (msg.type === 'gameStarted') {
+      // nicknames array order = player order
+      // Find my index from the room players
+      setTimeout(() => {
+        // We need the players array from the room, which has the same order
+        // For now, we'll get it from the game state
+        // Actually, let me just find it from the room info stored earlier
+      }, 0);
+    }
+    origHandler(msg);
+  };
+})();
+
+// Simpler approach: store my index when entering game
+function getMyIdx(){ return window._myIdx >= 0 ? window._myIdx : 0; }
+
+// ============================================================
+//  SHARED UI
+// ============================================================
+function buildBoard(){const b=document.getElementById('board');b.innerHTML='';const ct=document.createElement('div');ct.className='bc';ct.id='bC';ct.innerHTML='<h2>大富翁</h2><p>中 国 之 旅</p><div class="ri" id="rI"></div><div class="pi" id="pI"></div><div class="ci2" id="cI"></div>';b.appendChild(ct);
+S.forEach(sp=>{const el=document.createElement('div');const g=GP[sp.id];const cr=['go','jail','freeParking','goToJail'].includes(sp.type);el.className='sp'+(cr?' cr '+sp.type:'');el.id='sp'+sp.id;el.style.gridRow=g.r;el.style.gridColumn=g.c;if(sp.color)el.setAttribute('data-c',sp.color);let h='';
+if(cr){const ic={go:'🏁',jail:'🔒',freeParking:'🅿️',goToJail:'⛓️'};const lb={go:'出 发',jail:'监 狱',freeParking:'免费停车',goToJail:'入 狱'};h=`<div class="ci">${ic[sp.type]||''}</div><div class="cl">${lb[sp.type]||sp.name}</div>`;}
+else{const bg=sp.color?CM[sp.color]:sp.type==='railway'?'#78909c':sp.type==='utility'?'#a1887f':sp.type==='fate'?'#7e57c2':sp.type==='chance'?'#ff7043':'#78909c';h+=`<div class="cb" style="background:${bg}"></div><div class="sb">`;if(sp.type==='fate')h+='<div class="si">📜</div>';if(sp.type==='chance')h+='<div class="si">🎴</div>';if(sp.type==='tax')h+='<div class="si">💰</div>';if(sp.type==='railway')h+='<div class="si">🚄</div>';if(sp.type==='utility')h+='<div class="si">⚡</div>';h+=`<div class="sn">${sp.name}</div>`;if(sp.price)h+=`<div class="sp2">¥${sp.price}</div>`;if(sp.type==='tax')h+=`<div class="sp2">¥${sp.amount}</div>`;h+='</div>';}
+h+=`<div class="ta" id="tk${sp.id}"></div><div class="bi" id="bi${sp.id}"></div><div class="od" id="od${sp.id}" style="display:none"></div>`;el.innerHTML=h;el.onclick=()=>showInf(sp.id);b.appendChild(el);});}
+function rTk(){for(let i=0;i<40;i++){const e=document.getElementById('tk'+i);if(e)e.innerHTML='';}G.pl.forEach((p,i)=>{if(p.bk)return;const e=document.getElementById('tk'+p.pos);if(!e)return;const t=document.createElement('div');t.className='pt';t.style.background=PC[i];t.title=pn(i);t.textContent=i+1;e.appendChild(t);});}
+function rBi(){S.forEach(sp=>{const bi=document.getElementById('bi'+sp.id),od=document.getElementById('od'+sp.id);if(bi)bi.innerHTML=sp.houses===5?'🏨':sp.houses>0?'🏠'.repeat(sp.houses):'';if(od){if(sp.owner!==null){od.style.display='block';od.style.background=PC[sp.owner];}else od.style.display='none';}});}
+function buildDice(){[1,2].forEach(n=>{const sc=document.getElementById('ds'+n);sc.innerHTML='';const cube=document.createElement('div');cube.className='dc';cube.id='die'+n;const dirs=['fr','ri','to','bo','le','ba'];const vals=[1,2,3,4,5,6];for(let f=0;f<6;f++){const face=document.createElement('div');face.className='df df-'+dirs[f];for(let r=1;r<=3;r++)for(let c=1;c<=3;c++){const pip=document.createElement('div');const active=DP[vals[f]].some(p=>p.r===r&&p.c===c);pip.className='pp3'+(active?'':' e');face.appendChild(pip);}cube.appendChild(face);}sc.appendChild(cube);});}
+function setDie(n,v){const el=document.getElementById('die'+n);if(!el)return;el.style.transition='transform .5s cubic-bezier(.22,1,.36,1)';el.style.transform=DRT[v]||DRT[0];}
+async function animD(n,final){const el=document.getElementById('die'+n);for(let i=0;i<12;i++){el.style.transition='none';el.style.transform=`rotateX(${Math.random()*1080-540}deg) rotateY(${Math.random()*1080-540}deg)`;await dl(45);}setDie(n,final);}
+async function animMove(a){const p=G.pl[a.playerId];p.pos=a.from;let pos=a.from,n=0;while(pos!==a.to){pos=(pos+1)%40;p.pos=pos;rTk();await dl(90);if(++n>50)break;}}
+async function animCard(a){return new Promise(r=>{shM(`<div class="ci-ic">${a.cardType==='fate'?'📜':'🎴'}</div><h3>${a.cardType==='fate'?'命运':'机会'}卡</h3><div class="ct">${a.text}</div><div class="mb"><button class="btn p" onclick="hiM()">确定</button></div>`);setTimeout(()=>{hiM();r();},3000);});}
+function dl(ms){return new Promise(r=>setTimeout(r,ms));}
+function upd(){rTk();rBi();rPan();rCtr();rHint();rAct();}
+function rPan(){const c=document.getElementById('pps');c.innerHTML='';G.pl.forEach((p,i)=>{const d=document.createElement('div');d.className='pp'+(i===G.cp&&!p.bk?' active':'')+(p.bk?' bk':'');let ph=p.props.map(sid=>{const sp=S[sid];return`<span class="pp-pr" style="background:${sp.color?CM[sp.color]:sp.type==='railway'?'#78909c':'#a1887f'}">${sp.name}${sp.mortgaged?'🔒':''}</span>`;}).join('');let st='';if(p.bk)st='💸 已破产';else if(p.jail)st=`🔒 监狱 (${p.jt}/3)`;if(!p.bk&&p.ojc>0)st+=(st?' · ':'')+`🎫×${p.ojc}`;d.innerHTML=`<div class="ph"><div class="pd" style="background:${PC[i]}"></div><div class="pn2">${pn(i)}</div><div class="pm2" id="pm${i}">¥${p.money.toLocaleString()}</div></div>${ph?`<div class="pp-props">${ph}</div>`:''}${st?`<div class="pp-st">${st}</div>`:''}`;c.appendChild(d);});}
+function rCtr(){const ri=document.getElementById('rI'),pi=document.getElementById('pI'),ci=document.getElementById('cI');if(ri)ri.textContent=`第 ${G.rd} 轮`;if(pi)pi.textContent=G.uP&&G.pool>0?`💰 奖池 ¥${G.pool.toLocaleString()}`:'';if(!ci)return;if(G.st==='auction'){ci.textContent='🏷️ 拍卖中';ci.style.background='rgba(255,152,0,.15)';ci.style.color='#ff9800';ci.style.border='1px solid rgba(255,152,0,.3)';return;}if(G.st==='gameOver'){ci.textContent='🏆 '+pn(G.wn)+' 获胜！';ci.style.background='rgba(201,168,76,.2)';ci.style.color='var(--gold)';ci.style.border='1px solid var(--gold)';return;}const p=G.pl[G.cp];if(!p||p.bk){ci.textContent='';return;}ci.textContent=pn(G.cp)+' 的回合'+(p.jail?' 🔒':'');ci.style.background=PC[G.cp]+'22';ci.style.color=PC[G.cp];ci.style.border='1px solid '+PC[G.cp]+'55';}
+function rHint(){const e=document.getElementById('hint');if(!e)return;const m={'waitingRoll':'Space 掷骰子 · B 建造 · M 抵押','rolling':'🎲 滚动中...','moving':'移动中...','waitingEnd':'E 结束回合 · B 建造 · M 抵押','waitingBuyDecision':'购买或放弃？','jailRoll':'监狱！掷对子/保释/出狱卡','auction':'🏷️ 拍卖中','gameOver':'游戏结束'};e.textContent=m[G.st]||'';}
+
+function rAct(){const c=document.getElementById('acts');c.innerHTML='';const s=G.st;drdy(s==='waitingRoll'||s==='jailRoll');
+const myIdx=getMyIdx();const isMyTurn=G.cp===myIdx;
+if(mode==='online'&&!isMyTurn&&s!=='gameOver'){c.innerHTML='<div style="color:var(--txt-d);font-size:.75rem;padding:.3rem">等待 '+pn(G.cp)+' 操作...</div>';return;}
+if(s==='waitingRoll'){ab(c,'🎲 掷骰子','p',doRoll,'Space');const cb=canB(G.cp);const bb=ab(c,'🏗 建造','s'+(cb?' br':''),showBuild,'B');if(!cb)bb.title='点击查看建造进度';ab(c,'🏦 抵押',null,showMort,'M');if(trOk())ab(c,'🤝 交易',null,showTrade);}
+if(s==='waitingBuyDecision'){if(mode==='online'){ab(c,'购买','p',()=>ws.send(JSON.stringify({type:'buyProperty',spaceId:G.pl[G.cp].pos})));ab(c,'放弃→拍卖',null,()=>ws.send(JSON.stringify({type:'passProperty'})));}else{showBuyL(G.cp,G.pl[G.cp].pos);}}
+if(s==='jailRoll'){const p=G.pl[G.cp];if(p.ojc>0)ab(c,'🎫 出狱卡','s',doOJC);ab(c,'💰 保释¥'+BL,'d',doBail);ab(c,'🎲 掷骰子','p',doRoll,'Space');}
+if(s==='waitingEnd'){ab(c,'✅ 结束回合','p',doEnd,'E');const cb=canB(G.cp);const bb=ab(c,'🏗 建造','s'+(cb?' br':''),showBuild,'B');if(!cb)bb.title='点击查看建造进度';ab(c,'🏦 抵押',null,showMort,'M');if(trOk())ab(c,'🤝 交易',null,showTrade);}
+if(s==='auction'&&mode==='online'&&isMyTurn){const auc=G._auc;if(auc){const min=(auc.highestBid||0)+100;c.innerHTML+=`<div style="font-size:.72rem;color:var(--gold);margin-bottom:.3rem">当前最高: ¥${auc.highestBid||0}</div>`;ab(c,'出价¥'+min,'p',()=>ws.send(JSON.stringify({type:'bid',amount:min})));ab(c,'放弃',null,()=>ws.send(JSON.stringify({type:'skipBid'})));}}
+if(s==='gameOver'){ab(c,'🔄 新游戏','p',()=>location.reload());}}
+function ab(p,t,cl,fn,key){const b=document.createElement('button');b.className='btn'+(cl?' '+cl:'');b.innerHTML=t;if(key)b.title=key;b.onclick=fn;p.appendChild(b);return b;}
+function log(m,imp){const c=document.getElementById('gl');const e=document.createElement('div');e.className='le'+(imp?' i':'');e.textContent=m;c.appendChild(e);c.scrollTop=c.scrollHeight;}
+function shM(html){document.getElementById('mCt').innerHTML=html;document.getElementById('mOv').classList.remove('hidden');}
+function hiM(){document.getElementById('mOv').classList.add('hidden');}
+function tst(m,tp){tp=tp||'i';const c=document.getElementById('tBox');if(!c)return;const e=document.createElement('div');e.className='tst tst-'+tp;e.textContent=m;c.appendChild(e);setTimeout(()=>e.classList.add('tst-o'),2000);setTimeout(()=>e.remove(),2500);}
+function toast(m,tp){tst(m,tp);}
+function sFx(t){const el=document.getElementById('sFx');el.className='';void el.offsetWidth;el.className='sf-'+t;}
+function shk(){document.body.classList.add('shk');setTimeout(()=>document.body.classList.remove('shk'),350);}
+function bnr(t,s,d){d=d||2500;const el=document.createElement('div');el.className='bnr';el.innerHTML=`<div class="bn-t">${t}</div>${s?`<div class="bn-s">${s}</div>`:''}`;document.getElementById('bA').appendChild(el);setTimeout(()=>el.classList.add('bn-o'),d-500);setTimeout(()=>el.remove(),d);}
+function cnf(n){n=n||60;const cols=['#e74c3c','#f39c12','#2ecc71','#3498db','#e8c85a','#ec407a','#ab47bc','#ff9800'];for(let i=0;i<n;i++){const el=document.createElement('div');el.className='cnf';el.style.cssText=`left:${Math.random()*100}vw;background:${cols[i%cols.length]};width:${5+Math.random()*8}px;height:${5+Math.random()*8}px;border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*1.5}s;`;document.body.appendChild(el);setTimeout(()=>el.remove(),5000);}}
+function flM(a){const el=document.createElement('div');el.className='fm '+(a>0?'fm-g':'fm-l');el.textContent=(a>0?'+':'')+'¥'+Math.abs(a).toLocaleString();document.getElementById('fB').appendChild(el);setTimeout(()=>el.remove(),1500);}
+function drdy(on){document.querySelectorAll('.ds').forEach(d=>d.classList.toggle('drdy',on));}
+function showTimer(sec){const el=document.getElementById('timerBox');if(!el)return;el.classList.remove('hidden');el.textContent='⏰ '+sec+'秒';el.classList.toggle('urgent',sec<=15);}
+function addChatMsg(nick,msg){const c=document.getElementById('chatLog');if(!c)return;const d=document.createElement('div');d.className='chat-msg';d.innerHTML=`<span class="nick">${nick}:</span> ${msg}`;c.appendChild(c);c.scrollTop=c.scrollHeight;}
+function showEmojiBubble(nick,emoji){bnr(emoji,nick,1500);}
+
+// Helper for buy decision in local mode
+function showBuyL(pid,sid){const sp=S[sid],p=G.pl[pid],ok=p.money>=sp.price;const bg=sp.color?CM[sp.color]:sp.type==='railway'?'#78909c':'#a1887f';let ri='';if(sp.rent)ri=`<table class="rt"><tr><th>基础</th><td>¥${sp.rent[0]}</td></tr><tr><th>垄断翻倍</th><td>¥${sp.rent[0]*2}</td></tr>${[1,2,3,4].map(h=>`<tr><th>${h}栋</th><td>¥${sp.rent[h].toLocaleString()}</td></tr>`).join('')}<tr><th>旅馆</th><td>¥${sp.rent[5].toLocaleString()}</td></tr><tr><th>建造费</th><td>¥${sp.bc}/栋</td></tr></table>`;else if(sp.type==='railway')ri=`<table class="rt"><tr><th>1站</th><td>¥250</td></tr><tr><th>2站</th><td>¥500</td></tr><tr><th>3站</th><td>¥1000</td></tr><tr><th>4站</th><td>¥2000</td></tr></table>`;else ri='<p>1个:骰子×4 / 2个:骰子×10</p>';shM(`<div class="pc"><div class="pc-h"><div class="pc-c" style="background:${bg}"></div><div class="pc-n">${sp.name}</div><div class="pc-p">¥${sp.price}</div></div>${ri}</div><p style="text-align:center;color:var(--txt-d);font-size:.78rem">余额 ¥${p.money.toLocaleString()}${ok?'':' <span style="color:var(--danger)">不足</span>'}</p><div class="mb"><button class="btn p" onclick="localBuy(${pid},${sid})" ${ok?'':'disabled'}>购买</button><button class="btn" onclick="localPass(${sid})">放弃→拍卖</button></div>`);}
+
+// ============================================================
+//  LOCAL MODE ACTIONS (simplified wrappers)
+// ============================================================
+function oa(p,c){return S.filter(s=>s.color===c).every(s=>s.owner===p);}
+function co(p,t){return S.filter(s=>s.type===t&&s.owner===p).length;}
+function canB(p){return G.pl[p].props.some(sid=>{const s=S[sid];if(!s.color||s.houses>=5)return false;if(!oa(p,s.color))return false;const g=S.filter(sp=>sp.color===s.color);return s.houses<=Math.min(...g.map(sp=>sp.houses));});}
+function trOk(){return G.pl[G.cp].props.length>0&&G.pl.some((_,i)=>i!==G.cp&&!G.pl[i].bk&&G.pl[i].props.length>0);}
+function cR(sid,dt){const sp=S[sid];if(sp.owner===null||sp.owner===undefined||sp.mortgaged)return 0;const o=sp.owner;if(sp.type==='property')return sp.houses===0&&oa(o,sp.color)?sp.rent[0]*2:sp.rent[sp.houses];if(sp.type==='railway')return RR[co(o,'railway')-1];if(sp.type==='utility')return(dt||7)*(co(o,'utility')>=2?10:4);return 0;}
+
+// Online mode: send to server
+function doRoll(){if(mode==='online'){ws.send(JSON.stringify({type:'rollDice'}));return;}localRoll();}
+function doEnd(){if(mode==='online'){ws.send(JSON.stringify({type:'endTurn'}));return;}localEndTurn();}
+function doOJC(){if(mode==='online'){ws.send(JSON.stringify({type:'useOJC'}));return;}}
+function doBail(){if(mode==='online'){ws.send(JSON.stringify({type:'payBail'}));return;}}
+
+function showBuild(){const pid=G.cp,p=G.pl[pid];const allC=[...new Set(S.filter(s=>s.color).map(s=>s.color))];let h='<h3>🏗 建造房屋</h3>';let has=false;
+allC.forEach(cl=>{const grp=S.filter(s=>s.color===cl);const owned=grp.filter(s=>s.owner===pid);const complete=owned.length===grp.length&&grp.length>0;
+if(complete){has=true;const mn=Math.min(...grp.map(s=>s.houses)),mx=Math.max(...grp.map(s=>s.houses));h+=`<div style="margin-bottom:.6rem"><div style="font-size:.75rem;font-weight:700;margin-bottom:.25rem;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${CM[cl]}"></span>${cl.toUpperCase()} ✓ 垄断 · ¥${grp[0].bc}/栋</div>`;
+grp.forEach(s=>{const ca=s.houses<5&&s.houses<=mn&&p.money>=s.bc,cd=s.houses>0&&s.houses>=mx;const lb=s.houses===5?'🏨旅馆':s.houses>0?'🏠×'+s.houses:'空地';
+const doBd=mode==='online'?`ws.send(JSON.stringify({type:'buildHouse',spaceId:${s.id}}))`:`localBuild(${s.id})`;
+const doSd=mode==='online'?`ws.send(JSON.stringify({type:'sellHouse',spaceId:${s.id}}))`:`localSell(${s.id})`;
+h+=`<div style="display:flex;align-items:center;gap:.3rem;padding:.22rem .35rem;background:rgba(255,255,255,.02);border-radius:5px;margin-bottom:.1rem"><span style="flex:1;font-size:.72rem">${s.name}</span><span style="font-size:.65rem;color:var(--gold);min-width:48px;text-align:center">${lb}</span><button class="btn s" onclick="${doBd}" ${ca?'':'disabled'} style="padding:.18rem .4rem;font-size:.62rem;flex:0 0 auto;min-width:auto">+建</button><button class="btn d" onclick="${doSd}" ${cd?'':'disabled'} style="padding:.18rem .4rem;font-size:.62rem;flex:0 0 auto;min-width:auto">-拆</button></div>`;
+});h+='</div>';}
+else if(owned.length>0){const miss=grp.filter(s=>s.owner!==pid);h+=`<div style="margin-bottom:.6rem"><div style="font-size:.75rem;font-weight:700;margin-bottom:.25rem"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${CM[cl]}"></span> ${cl.toUpperCase()} ${owned.length}/${grp.length}</div><div style="font-size:.65rem;color:var(--txt-d)">已有: ${owned.map(s=>s.name).join('、')}<br>还需: ${miss.map(s=>s.name).join('、')}</div></div>`;}});
+if(!has)h+='<div style="text-align:center;padding:.7rem 0;color:var(--txt-d);font-size:.8rem;line-height:1.6">需要拥有同色<b>全部</b>地产才能建房。</div>';
+h+='<div class="mb"><button class="btn" onclick="hiM()">关闭</button></div>';shM(h);}
+
+function localBuild(sid){const s=S[sid],pid=G.cp,p=G.pl[pid],grp=S.filter(sp=>sp.color===s.color),mn=Math.min(...grp.map(sp=>sp.houses));if(s.houses>=5||s.houses>mn)return;if(p.money<s.bc){tst('资金不足','l');return;}p.money-=s.bc;s.houses++;log(pn(pid)+' 建造 '+s.name);flM(-s.bc);upd();showBuild();}
+function localSell(sid){const s=S[sid],pid=G.cp,grp=S.filter(sp=>sp.color===s.color),mx=Math.max(...grp.map(sp=>sp.houses));if(s.houses<=0||s.houses<mx)return;s.houses--;const rf=Math.floor((s.bc||0)/2);G.pl[pid].money+=rf;log(pn(pid)+' 拆除 '+s.name+' +¥'+rf);flM(rf);upd();showBuild();}
+function localBuy(pid,sid){const sp=S[sid],p=G.pl[pid];p.money-=sp.price;sp.owner=pid;p.props.push(sid);log(pn(pid)+' 购买 '+sp.name+' ¥'+sp.price,1);flM(-sp.price);hiM();chkM(pid,sp.color);G.st='waitingEnd';upd();}
+function localPass(sid){log(pn(G.cp)+' 放弃 '+S[sid].name);hiM();G.st='waitingEnd';upd();}
+
+function showMort(){const pid=G.cp,p=G.pl[pid];let h='<h3>🏦 抵押 / 赎回</h3>';if(!p.props.length){h+='<p style="text-align:center;color:var(--txt-d);padding:.8rem 0">无地产</p>';}else p.props.forEach(sid=>{const s=S[sid],gh=S.filter(sp=>sp.color&&sp.color===s.color).some(sp=>sp.houses>0);const cm=!s.mortgaged&&s.houses===0&&!gh,mv=Math.floor(s.price/2),uc=Math.floor(mv*1.1),cu=s.mortgaged&&p.money>=uc;const bg=s.color?CM[s.color]:s.type==='railway'?'#78909c':'#a1887f';
+const doMt=mode==='online'?`ws.send(JSON.stringify({type:'mortgage',spaceId:${sid}}))`:`localMort(${sid})`;
+const doUm=mode==='online'?`ws.send(JSON.stringify({type:'unmortgage',spaceId:${sid}}))`:`localUnmort(${sid})`;
+h+=`<div style="display:flex;align-items:center;gap:.3rem;padding:.22rem .35rem;background:rgba(255,255,255,.02);border-radius:5px;margin-bottom:.1rem"><span style="width:10px;height:10px;border-radius:2px;background:${bg};flex-shrink:0"></span><span style="flex:1;font-size:.72rem;${s.mortgaged?'color:var(--txt-d)':''}">${s.name}${s.mortgaged?' 🔒':''}</span><button class="btn d" onclick="${doMt}" ${cm?'':'disabled'} style="padding:.18rem .4rem;font-size:.62rem;flex:0 0 auto;min-width:auto">押¥${mv}</button><button class="btn s" onclick="${doUm}" ${cu?'':'disabled'} style="padding:.18rem .4rem;font-size:.62rem;flex:0 0 auto;min-width:auto">赎¥${uc}</button></div>`;});h+='<div class="mb"><button class="btn" onclick="hiM()">关闭</button></div>';shM(h);}
+function localMort(sid){const s=S[sid],pid=G.cp;s.mortgaged=true;const v=Math.floor(s.price/2);G.pl[pid].money+=v;log(pn(pid)+' 抵押 '+s.name+' +¥'+v);flM(v);upd();showMort();}
+function localUnmort(sid){const s=S[sid],pid=G.cp,cost=Math.floor(s.price/2*1.1);if(G.pl[pid].money<cost){tst('资金不足','l');return;}G.pl[pid].money-=cost;s.mortgaged=false;log(pn(pid)+' 赎回 '+s.name+' -¥'+cost);flM(-cost);upd();showMort();}
+
+function showTrade(){if(mode==='online'){const others=G.pl.map((_,i)=>i).filter(i=>i!==G.cp&&!G.pl[i].bk);if(!others.length||!G.pl[G.cp].props.length){tst('暂无可交易','i');return;}let h='<h3>🤝 交易</h3>';h+=`<div class="ts"><label>对象</label><select id="tTgt">${others.map(i=>`<option value="${i}">${pn(i)}</option>`).join('')}</select></div><div class="ts"><label>你给的地产</label><select id="tOff">${G.pl[G.cp].props.map(sid=>`<option value="${sid}">${S[sid].name}</option>`).join('')}</select></div><div class="ts"><label>附加现金</label><input type="number" id="tCash" value="0" min="0" step="100"></div><div class="ts"><label>你要的地产</label><select id="tWant"></select></div><div class="mb"><button class="btn p" onclick="doOnlineTrade()">确认</button><button class="btn" onclick="hiM()">取消</button></div>`;shM(h);document.getElementById('tTgt').onchange=function(){document.getElementById('tWant').innerHTML=G.pl[parseInt(this.value)].props.map(sid=>`<option value="${sid}">${S[sid].name}</option>`).join('');};document.getElementById('tTgt').dispatchEvent(new Event('change'));return;}
+  // Local trade - simplified
+  tst('本地交易暂未实现','i');
+}
+function doOnlineTrade(){ws.send(JSON.stringify({type:'proposeTrade',targetId:parseInt(document.getElementById('tTgt').value),offerSid:parseInt(document.getElementById('tOff').value),wantSid:parseInt(document.getElementById('tWant').value),cash:parseInt(document.getElementById('tCash').value)||0}));hiM();}
+
+function chkM(p,cl){if(!cl)return;const g=S.filter(s=>s.color===cl);if(g.every(s=>s.owner===p)){log('🎉 '+pn(p)+' 垄断 '+cl.toUpperCase()+' 组！',1);sFx('gd');bnr('🎉 垄断达成！',cl.toUpperCase()+' 组',2800);cnf(40);}}
+
+function showInf(sid){const s=S[sid];if(!s.price&&s.type!=='tax')return;const bg=s.color?CM[s.color]:s.type==='railway'?'#78909c':s.type==='utility'?'#a1887f':'#78909c';let h=`<h3>${s.name}</h3><div class="pc">`;if(s.type==='property'){const ow=s.owner!==null?pn(s.owner):'无';h+=`<div class="pc-h"><div class="pc-c" style="background:${bg}"></div><div class="pc-n">${s.name}</div><div class="pc-p">¥${s.price}</div></div><p style="font-size:.72rem;color:var(--txt-d)">拥有:${ow} · ${s.houses===5?'旅馆':s.houses+'栋'}${s.mortgaged?' · 抵押':''}</p><table class="rt"><tr><th>基础</th><td>¥${s.rent[0]}</td></tr><tr><th>垄断翻倍</th><td>¥${s.rent[0]*2}</td></tr>${[1,2,3,4].map(r=>`<tr><th>${r}栋</th><td>¥${s.rent[r].toLocaleString()}</td></tr>`).join('')}<tr><th>旅馆</th><td>¥${s.rent[5].toLocaleString()}</td></tr><tr><th>建造费</th><td>¥${s.bc}/栋</td></tr></table>`;}else if(s.type==='railway')h+=`<div class="pc-h"><div class="pc-c" style="background:${bg}"></div><div class="pc-n">🚄 ${s.name}</div><div class="pc-p">¥${s.price}</div></div><table class="rt"><tr><th>1站</th><td>¥250</td></tr><tr><th>2站</th><td>¥500</td></tr><tr><th>3站</th><td>¥1000</td></tr><tr><th>4站</th><td>¥2000</td></tr></table>`;else if(s.type==='utility')h+=`<div class="pc-h"><div class="pc-c" style="background:${bg}"></div><div class="pc-n">⚡ ${s.name}</div><div class="pc-p">¥${s.price}</div></div><p style="font-size:.8rem">1个:骰子×4 / 2个:骰子×10</p>`;else if(s.type==='tax')h+=`<p style="text-align:center;font-size:1.1rem;padding:.5rem 0">💰 缴纳¥${s.amount}</p>`;h+='</div><div class="mb"><button class="btn" onclick="hiM()">关闭</button></div>';shM(h);}
+
+// ============================================================
+//  LOCAL MODE LOGIC (simplified)
+// ============================================================
+async function localRoll(){
+  G.st='rolling';drdy(false);upd();
+  const d1=Math.floor(Math.random()*6)+1,d2=Math.floor(Math.random()*6)+1;
+  await Promise.all([animD(1,d1),animD(2,d2)]);document.getElementById('dT').textContent=d1+d2;G.d=[d1,d2];
+  const isD=d1===d2;document.getElementById('dB').textContent=isD?'🎲 对子！':'';sFx('gd');
+  log(pn(G.cp)+' 掷出 '+d1+'+'+d2+'='+(d1+d2)+(isD?' 【对子】':''));
+  if(isD){G.dc++;if(G.dc>=3){log(pn(G.cp)+' 三次对子，入狱！',1);goJailL();return;}G.isD=true;tst('对子！额外回合','g');}else{G.dc=0;G.isD=false;}
+  await localMove(G.cp,d1+d2);
+}
+async function localMove(pid,steps){G.st='moving';upd();const p=G.pl[pid];for(let i=0;i<steps;i++){const prev=p.pos;p.pos=(p.pos+1)%40;if(p.pos<prev){p.money+=GS;log(pn(pid)+' 经过起点 +¥'+GS);flM(GS);}rTk();await dl(90);}rTk();log(pn(pid)+' 到达 '+S[p.pos].name);localLand(pid,p.pos);}
+function localLand(pid,sid){const sp=S[sid];switch(sp.type){case'go':G.st='waitingEnd';upd();break;case'property':case'railway':case'utility':if(sp.owner===null){G.st='waitingBuyDecision';upd();}else if(sp.owner===pid){G.st='waitingEnd';upd();}else if(sp.mortgaged){G.st='waitingEnd';upd();}else{const rent=cR(sid,G.d[0]+G.d[1]);if(rent>0){const p=G.pl[pid];if(p.money>=rent){p.money-=rent;G.pl[sp.owner].money+=rent;log(pn(pid)+' 租金¥'+rent+'→'+pn(sp.owner));flM(-rent);}else{log(pn(pid)+' 破产！');p.bk=true;}}G.st='waitingEnd';upd();}break;default:G.st='waitingEnd';upd();break;}}
+function goJailL(){const p=G.pl[G.cp];p.jail=true;p.jt=0;p.pos=10;G.dc=0;G.isD=false;log(pn(G.cp)+' 入狱！',1);sFx('j');shk();rTk();G.st='waitingEnd';upd();}
+function localEndTurn(){if(G.isD&&!G.pl[G.cp].bk){G.st='waitingRoll';G.isD=false;log(pn(G.cp)+' 对子额外回合！',1);upd();return;}let nx=G.cp,tr=0;do{nx=(nx+1)%G.np;tr++;}while(G.pl[nx].bk&&tr<G.np);if(tr>=G.np)return;if(nx<=G.cp){G.rd++;log('═══ 第 '+G.rd+' 轮 ═══',1);}G.cp=nx;G.dc=0;G.isD=false;document.getElementById('dB').textContent='';G.st='waitingRoll';log('--- '+pn(G.cp)+' 的回合 ---',1);upd();}
+
+// ============================================================
+//  KEYBOARD
+// ============================================================
+document.addEventListener('keydown',function(e){
+  if(!document.getElementById('mOv').classList.contains('hidden'))return;
+  if(document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='SELECT'))return;
+  if(G.st==='waitingRoll'||G.st==='jailRoll'){if(e.code==='Space'||e.code==='Enter'){e.preventDefault();doRoll();}}
+  if(G.st==='waitingEnd'&&e.code==='KeyE')doEnd();
+  if(G.st==='waitingRoll'||G.st==='waitingEnd'){if(e.code==='KeyB')showBuild();if(e.code==='KeyM')showMort();}
+});
+
+// ============================================================
+//  INIT
+// ============================================================
+connectWs();
+</script>
+</body>
+</html>
